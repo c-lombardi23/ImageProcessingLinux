@@ -10,6 +10,7 @@ from tensorflow.keras.layers import GlobalAveragePooling2D
 
 
 
+
 class CustomModel:
     '''
     Class is used to define custom model using pre-trained MobileNetV2 model.
@@ -87,7 +88,7 @@ class CustomModel:
       '''
       # Adaptive Moment Estimation optimizer
       # Set learning rate and then compile model
-      # Loss functions is binary_crossentropy for binary classification
+      # Loss functions is categorical_crossentropy for multi-class classification
       #model = build_model((image_shape), (param_shape))
       model = self.build_pretrained_model(image_shape, param_shape)
       optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)

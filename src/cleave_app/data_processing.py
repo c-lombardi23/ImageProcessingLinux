@@ -5,6 +5,7 @@ import joblib
 import os
 from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
 from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
+from sklearn.utils.class_weight import compute_class_weight
 
 class DataCollector:
   '''
@@ -36,14 +37,15 @@ class DataCollector:
         return None
 
     def label(row):
-        if (row['CleaveAngle'] <= 0.45 and not row['Misting'] and not row['Hackle']):
-            return "Good"
-        elif (row['CleaveAngle'] <= 0.45) and (row['Misting'] or row['Hackle']):
-            return "Bad_Misting_Hackle"
-        elif (row['CleaveAngle'] > 0.45 and not row['Misting'] and not row['Hackle'] and row['ScribeDiameter'] >= 17):
-            return "BadDiameter"
-        else:
-            return "BadAngle"
+      if (row['CleaveAngle'] <= 0.45 and not row['Misting'] and not row['Hackle'] and row['ScribeDiameter'] >= 17):
+          return "BadDiameter"
+      elif (row['CleaveAngle'] <= 0.45 and not row['Misting'] and not row['Hackle']):
+          return "Good"
+      elif (row['CleaveAngle'] <= 0.45) and (row['Misting'] or row['Hackle']):
+          return "Bad_Misting_Hackle"
+      else:
+          return "BadAngle"
+
 
     df["CleaveCategory"] = df.apply(label, axis=1)
 

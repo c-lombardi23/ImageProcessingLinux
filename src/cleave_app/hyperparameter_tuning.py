@@ -72,16 +72,16 @@ class BuildHyperModel(HyperModel):
       z = Dense(
             hp.Int('dense_combined', min_value=16, max_value=128, step=16),
             activation='relu')(combined)
-      z = Dense(1, activation='sigmoid')(z)
+      z = Dense(4, activation='softmax')(z)
 
       model = Model(inputs=[image_input, param_input], outputs=z)
 
       model.compile(
             optimizer=tf.keras.optimizers.Adam(
-                learning_rate=hp.Choice('learning_rate', values=[0.0005, 0.001, 0.01])
+                learning_rate=hp.Choice('learning_rate', values=[0.0005, 0.001, 0.01, 0.015])
             ),
-            loss='binary_crossentropy',
-            metrics=['accuracy', 'precision','recall']
+            loss='categorical_crossentropy',
+            metrics=['accuracy']
         )
 
       return model
