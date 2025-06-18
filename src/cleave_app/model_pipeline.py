@@ -59,13 +59,13 @@ class CustomModel:
 
       combined = Concatenate()([x, y])
       z = Dense(64, name="third_dense_layer", activation='relu')(combined)
-      z = Dense(1, name="output_layer", activation='sigmoid')(z)
+      z = Dense(4, name="output_layer", activation='softmax')(z)
 
       model = Model(inputs=[image_input, params_input], outputs=z)
       model.summary()
       return model
 
-    def compile_model(self, image_shape, param_shape, learning_rate=0.001, metrics=['accuracy', 'precision', 'recall']):
+    def compile_model(self, image_shape, param_shape, learning_rate=0.001, metrics=['accuracy']):
       '''
       Compile model after calling build_model function
 
@@ -91,7 +91,7 @@ class CustomModel:
       #model = build_model((image_shape), (param_shape))
       model = self.build_pretrained_model(image_shape, param_shape)
       optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-      model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=metrics)
+      model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=metrics)
       return model
     
     def create_checkpoints(self, checkpoint_filepath="/content/drive/MyDrive/checkpoints.keras", monitor="val_accuracy", mode="max", save_best_only=True):

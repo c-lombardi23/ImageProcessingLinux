@@ -4,7 +4,7 @@ import tensorflow as tf
 import joblib
 import os
 from sklearn.model_selection import train_test_split, StratifiedKFold, KFold
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, OneHotEncoder
 
 class DataCollector:
   '''
@@ -28,22 +28,56 @@ class DataCollector:
     self.feature_scaler = None
     self.label_scaler = None
 
+  def set_label(self):
+    try:
+        df = pd.read_csv(self.csv_path)
+    except FileNotFoundError:
+        print("CSV file not found!")
+        return None
+
+    def label(row):
+        if (row['CleaveAngle'] <= 0.45 and not row['Misting'] and not row['Hackle']):
+            return "Good"
+        elif (row['CleaveAngle'] <= 0.45) and (row['Misting'] or row['Hackle']):
+            return "Bad_Misting_Hackle"
+        elif (row['CleaveAngle'] > 0.45 and not row['Misting'] and not row['Hackle'] and row['ScribeDiameter'] >= 17):
+            return "BadDiameter"
+        else:
+            return "BadAngle"
+
+    df["CleaveCategory"] = df.apply(label, axis=1)
+
+    return df
+
+        
   def clean_data(self):
     '''
     Read csv file into dataframe and add column for cleave quality.
 
     Returns: pandas.DataFrame
-      - dataframe with cleave quality column
+      - dataframe with cleave quality column and one-hot encoded labels
     '''
     try:
-      df = pd.read_csv(self.csv_path)
+        df = self.set_label()
     except FileNotFoundError:
-      print("Csv file not found!")
-      return None
-    df['CleaveQuality'] = ((df['CleaveAngle'] <= 0.45) & (df['Misting'] == 0) & (df['Hackle'] == 0)).astype(int)
-    # Clean image path to read from google drive'
-    df['ImagePath'] = df['ImagePath'].str.replace(self.img_folder, "")
+        print("CSV file not found!")
+        return None
+
+    # Clean image path
+    df['ImagePath'] = df['ImagePath'].str.replace(self.img_folder, "", regex=False)
+
+    # One-hot encode CleaveCategory
+    ohe = OneHotEncoder()
+    onehot_labels = ohe.fit_transform(df[['CleaveCategory']]).toarray()
+    class_names = ohe.categories_[0]
+
+    for idx, class_name in enumerate(class_names):
+        df[f"Label_{class_name}"] = onehot_labels[:, idx]
+
+    self.encoder = ohe
+
     return df
+
 
   def load_process_images(self, filename):
     
@@ -92,7 +126,8 @@ class DataCollector:
     images = self.df['ImagePath'].values
     #features = self.df[['CleaveAngle', 'CleaveTension']].values
     features = self.df[['CleaveAngle', 'CleaveTension', 'ScribeDiameter', 'Misting', 'Hackle', 'Tearing']].values.astype(np.float32)
-    labels = self.df['CleaveQuality'].values.astype(np.float32)
+    label_cols = [col for col in self.df.columns if col.startswith('Label_')]
+    labels = self.df[label_cols].values.astype(np.float32)
     self.feature_scaler = MinMaxScaler()
     features = self.feature_scaler.fit_transform(features)
     #joblib.dump(self.scaler, f'./{scaler_filename}.pkl')
